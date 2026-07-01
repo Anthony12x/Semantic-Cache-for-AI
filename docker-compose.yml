@@ -1,0 +1,35 @@
+services:
+  gateway:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: semantic_api
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_URL=redis://redis-stack:6379
+      # host.docker.internal allows the container to talk to the Windows host network
+      - OLLAMA_URL=http://host.docker.internal:11434 
+    depends_on:
+      - redis-stack
+    networks:
+      - ai_gateway_net
+    restart: unless-stopped
+
+  redis-stack:
+    image: redis/redis-stack-server:latest
+    container_name: semantic_cache_db
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ai_gateway_net
+    restart: unless-stopped
+
+networks:
+  ai_gateway_net:
+    driver: bridge
+
+volumes:
+  redis_data:
