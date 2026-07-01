@@ -1,0 +1,45 @@
+# 1. Secrets & Environments (CRITICAL)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# 2. Python & Virtual Environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# 3. Node.js & Promptfoo (For the Eval Suite)
+node_modules/
+.promptfoo/
+promptfoo-cache/
+npm-debug.log
+yarn-error.log
+
+# 4. Data & Vector Caches
+*.rdb
+*.aof
+dump.rdb
+*.db
+*.sqlite3
+data/
+models/
+*.onnx
+
+# 5. IDEs & Operating System
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# 6. Docker
+.docker/
+docker-compose.override.yml
