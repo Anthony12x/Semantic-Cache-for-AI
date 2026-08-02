@@ -1,20 +1,37 @@
 services:
   gateway:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile
     container_name: semantic_api
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     environment:
       - REDIS_URL=redis://redis-stack:6379
-      # host.docker.internal allows the container to talk to the Windows host network
-      - OLLAMA_URL=http://host.docker.internal:11434 
+      - OLLAMA_URL=http://host.docker.internal:11434
     depends_on:
-      - redis-stack
+      redis-stack:
+        condition: service_healthy
+    volumes:
+      - ./app:/app/app
+      - hf_cache:/app/.cache/huggingface
     networks:
       - ai_gateway_net
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 300s
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 4G
 
   redis-stack:
     image: redis/redis-stack-server:latest
@@ -26,6 +43,16 @@ services:
     networks:
       - ai_gateway_net
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
 
 networks:
   ai_gateway_net:
@@ -33,3 +60,4 @@ networks:
 
 volumes:
   redis_data:
+  hf_cache:

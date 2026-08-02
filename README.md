@@ -1,111 +1,121 @@
 # Semantic Gateway
 
-Cuts LLM costs by caching semantically identical queries — no matter how they're phrased.
+Cuts LLM inference costs by caching semantically equivalent queries — regardless of how they're phrased.
 
-You ask "How do I restart a docker container?" once. You ask "How do I reboot a docker instance?" next time. Same answer, zero inference cost, much faster response.
-
-That's it. Just a FastAPI gateway, Redis with HNSW, and an ONNX model running on your CPU.
+FastAPI gateway → Redis HNSW → Two-stage retrieval (BGE + ColBERT MaxSim).
 
 ---
 
-## How It Works
+## Example Use Cases
+
+### 🤖 AI Customer Chat Support
+In customer support, users frequently ask the same questions using different phrasing.
+* **User A:** "How do I reset my password?" (Triggers LLM generation, takes 3s, costs $0.01)
+* **User B:** "I forgot my password, how to change it?" (Hits semantic cache, takes <1ms, costs $0)
+* **User C:** "Where is the password reset page?" (Hits semantic cache, takes <1ms, costs $0)
+
+By caching these semantically identical requests, you drastically reduce OpenAI/Anthropic API bills and provide instant responses to end-users.
+
+### ⚙️ AI CI/CD Workflows
+When using LLMs in automated pipelines (e.g., automated code review, security scanning, or generating release notes), the same code diffs or commit messages might be processed multiple times across different branches or retried builds.
+* **Build 1:** "Summarize these changes: `git diff ...`" (Triggers LLM generation)
+* **Build 2 (Retry or Rebase):** "Summarize these changes: `git diff ...`" (Hits semantic cache instantly)
+
+Speeds up the CI/CD pipeline and prevents redundant API calls for identical or highly similar code changes.
+
+---
+
+## Architecture
 
 ![System Architecture](assets/architecture.png)
 
-**The cache validation.**
+### Two-Stage Retrieval Pipeline
 
-A raw vector search will match semantically similar but intentionally different queries ("add two numbers" vs "multiply two numbers"). In enterprise environments, serving a False Positive is a catastrophic failure. It is strictly better to accept a Cache Miss (and pay for the GPU compute) than to serve the wrong context. To guarantee this, the gateway implements two validations for cache:
+1. **Stage 1 — Candidate Retrieval:** BGE dense embeddings are searched via HNSW ANN (KNN-5) in Redis. Returns the top 5 nearest neighbours by cosine distance.
 
-1. **Cosine distance** via HNSW ANN (Redis). Must be within `CACHE_THRESHOLD`.
-2. **Length variance** — If the character counts differ by more than 25%, reject. Short queries and long paraphrases shouldn't match even if the embedding says they're close.
+2. **Stage 2 — ColBERT Reranking:** Each candidate's stored ColBERT token matrix is scored against the query using MaxSim (sum of per-query-token maximum dot products). The highest-scoring candidate above `MAXSIM_THRESHOLD` is returned as a cache hit.
 
-The threshold is calibrated per a dataset using `scripts/calibrate_thresholds.py` — it sweeps cosine distance values and reports F1-score with false-positive detection.
+3. **Fallback:** If ColBERT embeddings aren't available, the gateway falls back to cosine distance + a 25% length variance check to reject false positives.
 
----
+The thresholds are calibrated per-dataset using `scripts/calibrate_thresholds.py`, which sweeps both MaxSim and cosine distance values and reports F1-score with false-positive detection.
+
 
 ## Tech Stack
 
 | Layer | What |
 |---|---|
-| API | FastAPI + uvicorn |
-| Embeddings | `sentence-transformers/all-MiniLM-L6-v2` via ONNX Runtime |
+| API | FastAPI + Uvicorn |
+| Dense Embeddings | `BAAI/bge-base-en-v1.5` (768-dim) via ONNX Runtime |
+| Late Interaction Reranker | `colbert-ir/colbertv2.0` via PyTorch |
 | Vector Store | Redis Stack (RediSearch HNSW) |
-| Inference | Ollama (host-native) |
+| Inference | Ollama (host-native), OpenAI, Anthropic |
+| CI/CD | GitHub Actions → GHCR |
+| Observability | `/health` probe, Prometheus `/metrics` endpoint |
 
 ---
 
 ## Prerequisites
 
-- Python 3.11+
 - [Docker & Docker Compose](https://docs.docker.com/get-docker/)
-- [Ollama](https://ollama.ai/) (installed on the host, not in Docker)
+- [Ollama](https://ollama.ai/) installed on the host (not in Docker — needs GPU access)
 
 ---
 
-## Setup
+## Quick Start
 
-### 1. Docker infrastructure
-
-```bash
-docker compose up -d
-```
-
-This spins up the gateway (port 8000) and Redis Stack (port 6379).
-
-### 2. Ollama on the host
-
-Ollama runs natively on your machine (not in Docker) so it can access your GPU directly. Run the provisioning script to verify the daemon and download the weights:
-
-```bash
-.\scripts\init_host.ps1
-```
-
-### 3. Environment
+### 1. Configure
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` with your settings. The defaults should work out of the box.
+### 2. Provision Ollama
 
-### 4. Install dependencies
+Make sure Ollama is installed and running on your host machine (so it can use your GPU). Pull the model you want to use, for example:
+```bash
+ollama pull tinyllama
+```
+
+### 3. Launch
+
+```bash
+docker compose up -d
+```
+
+The gateway starts on port `8000` after Redis passes its healthcheck.
+
+### 4. Verify
+
+```bash
+curl http://localhost:8000/health
+```
+
+```json
+{"status": "healthy", "redis": "connected"}
+```
+
+### 5. Calibrate thresholds (optional)
 
 ```bash
 pip install -e ".[dev]"
-```
-
-### 5. Calibrate (optional but recommended)
-
-```bash
 python scripts/calibrate_thresholds.py
 ```
 
-This runs your embedding model against a dataset of positive pairs (should match) and negative pairs (must not match), then outputs a threshold sweep with F1-scores. Pick the threshold with zero false positives and the highest F1. Update `CACHE_THRESHOLD` in `.env`.
+Updates `CACHE_THRESHOLD` and `MAXSIM_THRESHOLD` in `.env` based on your embedding model's behaviour.
 
 ---
 
-## Configuration
 
-| Variable | Default |
-|---|---|
-| `REDIS_URL` | `redis://localhost:6379` |
-| `OLLAMA_URL` | `http://localhost:11434`|
-| `CACHE_THRESHOLD` | `0.12` |
-| `VECTOR_DIMENSION` | `384` |
-
----
 
 ## API
 
-### POST `/api/v1/generate`
+### `POST /api/v1/generate`
 
 ```bash
 curl -X POST http://localhost:8000/api/v1/generate \
   -H "Content-Type: application/json" \
   -d '{"prompt": "What is the primary function of a reverse proxy?", "model": "tinyllama"}'
 ```
-
-Response:
 
 ```json
 {
@@ -117,15 +127,44 @@ Response:
 
 | Field | Meaning |
 |---|---|
-| `cached` | `true` = served from cache, `false` = fetched from Ollama |
-| `response` | The response text |
-| `latency_ms` | Total request time. Cache hits are typically <1ms. |
+| `cached` | `true` = served from cache, `false` = fetched from LLM |
+| `response` | The generated or cached response text |
+| `latency_ms` | Total request time — cache hits are typically <1ms |
+
+### `GET /health`
+
+Checks if the server is healthy and connected to Redis.
+
+### `GET /metrics`
+
+Prometheus metrics endpoint. Shows:
+- `gateway_requests_total` — total requests
+- `gateway_cache_hits_total` / `gateway_cache_misses_total` — hit rate
+- `gateway_llm_errors_total` — LLM failures
+- `gateway_request_duration_seconds` — latency histogram
+
+---
+
+## Configuration
+
+| Variable | Default | Description |
+|---|---|---|
+| `REDIS_URL` | `redis://localhost:6379` | Redis connection string |
+| `OLLAMA_URL` | `http://localhost:11434` | Ollama API endpoint |
+| `CACHE_THRESHOLD` | `0.22` | Max cosine distance for fallback cache hits |
+| `MAXSIM_THRESHOLD` | `12.0` | Min ColBERT MaxSim score for cache hits |
+| `VECTOR_DIMENSION` | `768` | Must match embedding model output |
+| `EMBEDDING_MODEL_ID` | `BAAI/bge-base-en-v1.5` | HuggingFace model for dense embeddings |
+| `COLBERT_MODEL_ID` | `colbert-ir/colbertv2.0` | HuggingFace model for late interaction |
+| `CACHE_TTL_SECONDS` | `86400` | Cache entry expiry (24h) |
+| `LOG_FORMAT` | `text` | `text` or `json` for structured logging |
+| `LOG_LEVEL` | `INFO` | Python log level |
 
 ---
 
 ## Testing
 
-50 basic prompt pairs across 5 domains (IT helpdesk, software engineering, DevOps, data science, HR/legal). Each pair tests that a rephrased query hits the cache after the original was asked:
+50 prompt pairs across 5 domains (networking, Python, DevOps, ML, security). Phase 1 populates the cache, Phase 2 verifies hits:
 
 ```bash
 docker exec semantic_cache_db redis-cli FLUSHALL
@@ -139,36 +178,35 @@ npx promptfoo@latest eval --no-cache -j 1
 ```
 .
 ├── app/
-│   ├── api/v1/routes/gateway.py   # HTTP endpoints
-│   ├── core/config.py             # Settings from environment
-│   ├── models/dto.py              # Request/response schemas
+│   ├── api/v1/routes/
+│   │   ├── gateway.py              # /generate endpoint
+│   │   └── metrics.py              # /metrics (Prometheus)
+│   ├── core/
+│   │   ├── config.py               # Settings from env
+│   │   └── http.py                 # Shared aiohttp session
+│   ├── models/dto.py               # Request/response schemas
 │   ├── services/
-│   │   ├── cache.py               # Redis-backed semantic cache
-│   │   └── embedder.py            # ONNX embedding model
-│   └── main.py                    # FastAPI entrypoint
+│   │   ├── cache.py                # Redis HNSW + ColBERT reranking
+│   │   ├── embedder.py             # BGE (ONNX) + ColBERT (PyTorch)
+│   │   └── llm.py                  # Ollama / OpenAI / Anthropic
+│   └── main.py                     # FastAPI app + /health
 ├── scripts/
-|   ├── init_host.ps1              # Host-level Ollama provisioning
-│   └── calibrate_thresholds.py    # Threshold calibration utility
-├── tests/
-│   ├── conftest.py                # Shared fixtures
-│   └── test_cache.py              # Cache service tests
-├── docker-compose.yml
-├── Dockerfile
-├── pyproject.toml
-└── requirements.txt
+│   └── calibrate_thresholds.py     # Threshold sweep utility
+
+├── docker-compose.yml              # Dev (hot-reload, persistent cache)
+├── Dockerfile                      # Multi-stage build
+├── promptfooconfig.yaml            # 100-prompt eval suite
+└── pyproject.toml
 ```
 
 ---
 
 ## What's Next (Not in v1)
 
-- [ ] Switching to a higher-capacity local embedding model for better threshold and more cache hits
-- [ ] Cache TTL / eviction policy
-- [ ] Externalize validation datasets via CSV ingestion for scalable testing
-- [ ] Automate Continuous Calibration pipeline using historical prompt logs for more accurate cache threshold
-- [ ] Include Enterprise AI/API support
-- [ ] Retry logic on Ollama failures
-- [ ] Async embedding to avoid blocking the event loop
+- [ ] Switch to a larger local embedding model for better accuracy
+- [ ] Automate the continuous calibration pipeline using historical prompt logs
+- [ ] Add automatic retries if Ollama fails
+
 ---
 
 ## License

@@ -14,6 +14,8 @@ venv/
 env/
 pip-log.txt
 pip-delete-this-directory.txt
+.pytest_cache/
+*.egg-info/
 
 # 3. Node.js & Promptfoo (For the Eval Suite)
 node_modules/
@@ -29,7 +31,7 @@ dump.rdb
 *.db
 *.sqlite3
 data/
-models/
+/models/
 *.onnx
 
 # 5. IDEs & Operating System

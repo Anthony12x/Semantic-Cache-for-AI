@@ -2,12 +2,15 @@
 requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.packages.find]
+include = ["app*"]
+
 [project]
 name = "semantic-gateway"
 version = "0.1.0"
 description = "API Gateway with semantic caching for LLM inference"
 readme = "README.md"
-license = {text = "MIT"}
+license = "MIT"
 requires-python = ">=3.11"
 keywords = ["semantic-cache", "llm", "fastapi", "redis", "vector-search"]
 dependencies = [
@@ -20,6 +23,10 @@ dependencies = [
     "numpy>=1.26.2",
     "aiohttp>=3.9.1",
     "huggingface-hub>=0.19.0",
+    "torch>=2.0.0",
+    "safetensors>=0.4.0",
+    "pandas>=2.1.0",
+    "openpyxl>=3.1.2",
 ]
 
 [project.optional-dependencies]
@@ -40,6 +47,13 @@ line-length = 100
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP"]
 
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"

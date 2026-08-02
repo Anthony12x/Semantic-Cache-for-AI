@@ -1,0 +1,11 @@
+prompt_a,prompt_b,should_cache
+"Explain what a reverse proxy does and when to use one.","What is the purpose of a reverse proxy and in what scenarios should it be deployed?",True
+"What is the difference between a list and a tuple in Python?","Compare Python lists and tuples in terms of mutability and use cases.",True
+"What is the difference between a Docker image and a Docker container?","Compare Docker images and containers and explain how one relates to the other.",True
+"What is overfitting in machine learning and how can it be prevented?","Explain the problem of overfitting in ML models and list techniques to mitigate it.",True
+"What is SQL injection and how can applications defend against it?","Explain the SQL injection attack vector and list best practices for preventing it.",True
+"Explain what a reverse proxy does and when to use one.","What is the OSI model and what are its seven layers?",False
+"What is the difference between a list and a tuple in Python?","What are Python generators and how do they differ from regular functions?",False
+"What is the difference between a Docker image and a Docker container?","What is a Terraform state file and why is it important?",False
+"What is overfitting in machine learning and how can it be prevented?","What is the attention mechanism in transformer models?",False
+"What is SQL injection and how can applications defend against it?","What is cross-site scripting and how do web applications prevent it?",False

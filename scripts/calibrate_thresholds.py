@@ -1,12 +1,8 @@
-"""Calibrate CACHE_THRESHOLD using a dataset of positive and negative prompt pairs.
+"""Calibrate MAXSIM_THRESHOLD and CACHE_THRESHOLD by sweeping against labeled prompt pairs.
 
 Run from the project root::
 
     python scripts/calibrate_thresholds.py
-
-This script embeds every pair with the local ONNX model, computes cosine distances,
-and sweeps thresholds from 0.05 to 0.35 to find the value that maximises F1-score
-with zero false positives.
 """
 
 from __future__ import annotations
@@ -16,151 +12,180 @@ from pathlib import Path
 
 import numpy as np
 
-# Ensure the project root is on sys.path so ``app`` is importable
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app.services.embedder import LocalEmbedder  # noqa: E402
+from app.services.embedder import LocalEmbeddingEngine  # noqa: E402
+from app.core.config import settings  # noqa: E402
 
-# ---------------------------------------------------------------------------
-# Calibration dataset
-# ---------------------------------------------------------------------------
-# Each entry is a pair of prompts.  ``should_cache=True`` means the two prompts
-# are semantically equivalent and *should* produce a cache hit.
-# ``should_cache=False`` means they have different intent and *must not* match.
-DATASET: list[dict[str, str | bool]] = [
-    # -- positive pairs (should match) -----------------------------------
-    {
-        "a": "What is the primary function of a reverse proxy?",
-        "b": "Can you explain what reverse proxies do in a network?",
-        "should_cache": True,
-    },
-    {
-        "a": "Write a python function to add two integer numbers.",
-        "b": "Show me how to add two integers together using Python.",
-        "should_cache": True,
-    },
-    {
-        "a": "How do I reset my corporate active directory password?",
-        "b": "What are the steps to change my company login password?",
-        "should_cache": True,
-    },
-    {
-        "a": "What is the command to restart a running docker container?",
-        "b": "How do I reboot a docker instance that is currently running?",
-        "should_cache": True,
-    },
-    {
-        "a": "Explain the difference between AWS S3 and AWS EBS storage.",
-        "b": "Compare Amazon S3 object storage with EBS block storage.",
-        "should_cache": True,
-    },
-    # -- negative pairs (must NOT match) ---------------------------------
-    {
-        "a": "Write a python function to add two integer numbers.",
-        "b": "Write a python function to multiply two integer numbers.",
-        "should_cache": False,
-    },
-    {
-        "a": "How do I reset my corporate active directory password?",
-        "b": "How do I reset my personal email password?",
-        "should_cache": False,
-    },
-    {
-        "a": "Drop the database table for user accounts.",
-        "b": "Drop the database index for user accounts.",
-        "should_cache": False,
-    },
-    {
-        "a": "Start the production web server.",
-        "b": "Stop the production web server.",
-        "should_cache": False,
-    },
-    {
-        "a": "Grant admin privileges to the guest user.",
-        "b": "Revoke admin privileges from the guest user.",
-        "should_cache": False,
-    },
-]
+import argparse
+import pandas as pd
 
+def load_dataset(file_path: str) -> list[dict[str, str | bool]]:
+    """Loads prompt pairs from a CSV or Excel file."""
+    path = Path(file_path)
+    if not path.exists():
+        print(f"Error: File '{file_path}' not found.")
+        sys.exit(1)
+        
+    try:
+        if path.suffix == ".csv":
+            df = pd.read_csv(path)
+        elif path.suffix in [".xlsx", ".xls"]:
+            df = pd.read_excel(path)
+        else:
+            print(f"Error: Unsupported file format '{path.suffix}'. Use .csv or .xlsx")
+            sys.exit(1)
+            
+        required_cols = {"prompt_a", "prompt_b", "should_cache"}
+        if not required_cols.issubset(set(df.columns)):
+            print(f"Error: File must contain columns: {', '.join(required_cols)}")
+            sys.exit(1)
+            
+        # Ensure should_cache is boolean
+        df["should_cache"] = df["should_cache"].astype(bool)
+    
+        # Convert to expected format
+        dataset = []
+        for _, row in df.iterrows():
+            dataset.append({
+                "a": str(row["prompt_a"]),
+                "b": str(row["prompt_b"]),
+                "should_cache": bool(row["should_cache"])
+            })
+        return dataset
+    except Exception as e:
+        print(f"Error loading dataset: {e}")
+        sys.exit(1)
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 def cosine_distance(vec_a: list[float], vec_b: list[float]) -> float:
-    """Return the cosine distance between two normalised vectors."""
+    """1 - cosine_similarity between two vectors."""
     a = np.array(vec_a)
     b = np.array(vec_b)
     denom = np.linalg.norm(a) * np.linalg.norm(b)
     if denom == 0:
-        return 1.0  # orthogonal / zero vectors are maximally distant
+        return 1.0
     return float(1.0 - (np.dot(a, b) / denom))
 
 
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
+def run_parameter_sweep(dataset: list[dict[str, str | bool]]) -> None:
+    """Sweeps MAXSIM and cosine thresholds against the dataset, prints optimal values."""
+    print(f"\nInitialising base embedder: {settings.EMBEDDING_MODEL_ID} ...")
+    base_embedder = LocalEmbeddingEngine()
 
-def run_parameter_sweep() -> None:
-    """Embed every pair, compute distances, and sweep thresholds."""
-    print("\nInitialising ONNX embedder (offline mode) ...")
-    embedder = LocalEmbedder()
+    print(f"Initialising ColBERT embedder: {settings.COLBERT_MODEL_ID} ...")
+    try:
+        from app.services.embedder import ColbertEmbeddingEngine
+        embedder = ColbertEmbeddingEngine()
+        colbert_enabled = True
+    except Exception as e:
+        print(f"[WARNING] Could not load ColBERT engine: {e}")
+        embedder = None
+        colbert_enabled = False
 
-    print("\nCalculating vector distances for dataset ...")
-    results: list[dict] = []
+    print("\nCalculating embeddings and scores for dataset ...")
+    results = []
+    optimal_maxsim = 0.0
 
-    for item in DATASET:
-        vec_a = embedder.get_embedding(item["a"])
-        vec_b = embedder.get_embedding(item["b"])
-        distance = cosine_distance(vec_a, vec_b)
+    for idx, item in enumerate(dataset):
+        vec_a = base_embedder.get_embedding(str(item["a"]))
+        vec_b = base_embedder.get_embedding(str(item["b"]))
+        dist = cosine_distance(vec_a, vec_b)
+
+        max_len = max(len(str(item["a"])), len(str(item["b"])))
+        length_variance = abs(len(str(item["a"])) - len(str(item["b"]))) / max_len if max_len > 0 else 1.0
+
+        score = -1.0
+        if colbert_enabled and embedder is not None:
+            a_matrix = embedder.get_colbert_embedding(str(item["a"]))
+            b_matrix = embedder.get_colbert_embedding(str(item["b"]))
+            score = embedder.compute_maxsim(a_matrix, b_matrix)
+
         results.append({
             "a": item["a"],
             "b": item["b"],
-            "distance": distance,
+            "maxsim": score,
+            "cosine_dist": dist,
+            "length_variance": length_variance,
             "should_cache": item["should_cache"],
         })
 
-    # -- raw distances -------------------------------------------------------
-    print("\n--- RAW VECTOR DISTANCES ---")
+    if colbert_enabled:
+        print("\n--- RAW COLBERT MAXSIM SCORES ---")
+        for r in results:
+            status = "MATCH EXPECTED" if r["should_cache"] else "MISS EXPECTED "
+            print(f"[{status}] MaxSim: {r['maxsim']:.2f} | {r['a'][:30]}... <-> {r['b'][:30]}...")
+
+        print("\n--- MAXSIM THRESHOLD PARAMETER SWEEP ---")
+        print(f"{'Threshold':<12} | {'True Positives':<16} | {'False Positives (FATAL)':<25} | {'F1-Score':<10}")
+        print("-" * 70)
+
+        best_f1_colbert = 0.0
+        optimal_maxsim = 20.0
+        for threshold in np.arange(10.0, 45.0, 0.5):
+            tp = sum(1 for r in results if r["maxsim"] >= threshold and r["should_cache"])
+            fp = sum(1 for r in results if r["maxsim"] >= threshold and not r["should_cache"])
+            fn = sum(1 for r in results if r["maxsim"] < threshold and r["should_cache"])
+
+            precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+            recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+            f1 = (2 * precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+            marker = " <--- FATAL" if fp > 0 else ""
+
+            if f1 > best_f1_colbert and fp == 0:
+                best_f1_colbert = f1
+                optimal_maxsim = threshold
+            print(f"{threshold:.2f}         | {tp:<16} | {fp:<25} | {f1:.2f}{marker}")
+
+    print("\n--- RAW COSINE DISTANCES (Fallback) ---")
     for r in results:
         status = "MATCH EXPECTED" if r["should_cache"] else "MISS EXPECTED "
-        print(
-            f"[{status}] Dist: {r['distance']:.3f} | "
-            f"{r['a'][:30]}... <-> {r['b'][:30]}..."
-        )
+        var_status = "PASS" if r['length_variance'] <= 0.25 else "FAIL"
+        print(f"[{status}] Dist: {r['cosine_dist']:.3f} | Var: {r['length_variance']:.2f} ({var_status}) | {r['a'][:25]}...")
 
-    # -- threshold sweep -----------------------------------------------------
-    print("\n--- THRESHOLD PARAMETER SWEEP ---")
+    print("\n--- CACHE_THRESHOLD PARAMETER SWEEP (with Length Variance <= 25%) ---")
     print(f"{'Threshold':<12} | {'True Positives':<16} | {'False Positives (FATAL)':<25} | {'F1-Score':<10}")
     print("-" * 70)
 
-    best_f1 = 0.0
-    optimal_threshold = 0.05
-
-    for threshold in np.arange(0.05, 0.36, 0.01):
-        tp = sum(1 for r in results if r["distance"] <= threshold and r["should_cache"])
-        fp = sum(1 for r in results if r["distance"] <= threshold and not r["should_cache"])
-        fn = sum(1 for r in results if r["distance"] > threshold and r["should_cache"])
+    best_f1_cosine = 0.0
+    optimal_cosine = 0.12
+    for threshold in np.arange(0.05, 0.35, 0.01):
+        tp = sum(1 for r in results if r["cosine_dist"] <= threshold and r["length_variance"] <= 0.25 and r["should_cache"])
+        fp = sum(1 for r in results if r["cosine_dist"] <= threshold and r["length_variance"] <= 0.25 and not r["should_cache"])
+        fn = sum(1 for r in results if (r["cosine_dist"] > threshold or r["length_variance"] > 0.25) and r["should_cache"])
 
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0
         f1 = (2 * precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
-
         marker = " <--- FATAL" if fp > 0 else ""
 
-        if f1 > best_f1 and fp == 0:
-            best_f1 = f1
-            optimal_threshold = threshold
-
+        if f1 > best_f1_cosine and fp == 0:
+            best_f1_cosine = f1
+            optimal_cosine = threshold
         print(f"{threshold:.2f}         | {tp:<16} | {fp:<25} | {f1:.2f}{marker}")
 
     print("\n" + "=" * 50)
-    print(f"OPTIMAL CACHE_THRESHOLD: {optimal_threshold:.2f}")
+    if colbert_enabled:
+        print(f"OPTIMAL MAXSIM_THRESHOLD: {optimal_maxsim:.2f}")
+    print(f"OPTIMAL CACHE_THRESHOLD (Cosine): {optimal_cosine:.2f}")
     print("=" * 50)
-    print("Update this value in your .env file.")
-    print("Note: If you have False Positives at every threshold, your embedding model")
-    print("      may be too small for your data. Consider a larger model.")
+    print("Update these values in your .env file.")
 
+def main():
+    parser = argparse.ArgumentParser(description="Calibrate Semantic Cache Thresholds")
+    parser.add_argument(
+        "--file", 
+        type=str, 
+        default="assets/calibration_dataset.csv",
+        help="Path to CSV or Excel file containing prompt_a, prompt_b, and should_cache columns."
+    )
+    args = parser.parse_args()
+
+    print(f"Loading dataset from: {args.file}")
+    dataset = load_dataset(args.file)
+    print(f"Loaded {len(dataset)} prompt pairs.\n")
+    
+    run_parameter_sweep(dataset)
 
 if __name__ == "__main__":
-    run_parameter_sweep()
+    main()

@@ -1,4 +1,4 @@
-description: "Enterprise Semantic Cache Validation Suite (50 Pairs / 100 Prompts)"
+description: "Enterprise Semantic Cache Validation Suite (Automated Workloads - 50 Pairs / 100 Prompts)"
 
 prompts:
   - "{{prompt}}"
@@ -20,270 +20,217 @@ providers:
 
 tests:
   # ==========================================
-  # DOMAIN 1: IT HELPDESK & INFRASTRUCTURE (10 Pairs)
+  # PHASE 1: POPULATE CACHE (All 50 [MODEL] runs)
   # ==========================================
-  - vars: { prompt: "How do I reset my corporate active directory password?" }
+  - vars: { prompt: "Explain what a reverse proxy does and when to use one." }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "What are the steps to change my company login password?" }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "What is the primary function of a reverse proxy server?" }
+  - vars: { prompt: "How does DNS resolution work when a user types a URL into a browser?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "Can you explain what reverse proxies do in a network?" }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "How to connect to the corporate VPN from a Mac laptop?" }
+  - vars: { prompt: "What is the difference between TCP and UDP protocols?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "Steps for connecting my MacBook to the company network VPN." }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "Why is my outlook email not syncing on my mobile phone?" }
+  - vars: { prompt: "How does a load balancer distribute traffic across multiple servers?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "Outlook is failing to update emails on my smartphone." }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "Explain the difference between a router and a network switch." }
+  - vars: { prompt: "What is a VPN and how does it secure network traffic?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "Compare network routers and switches and how they operate." }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "How do I request a replacement for a broken keyboard?" }
+  - vars: { prompt: "What is the role of a firewall in network security?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "What is the process to get a new keyboard if mine is broken?" }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "What is the Wi-Fi password for the guest network in the lobby?" }
+  - vars: { prompt: "How does HTTPS differ from HTTP and why is it more secure?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "Can you give me the login credentials for the visitor Wi-Fi?" }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "How to install the corporate antivirus on a personal device." }
+  - vars: { prompt: "What is NAT and why is it used in home routers?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "Steps for putting company security software on my own laptop." }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "Why is the office printer showing a paper jam error?" }
+  - vars: { prompt: "How does a CDN improve website performance for global users?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "The network printer is jammed, how do I fix the error?" }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "How do I map a network drive on a Windows 11 machine?" }
+  - vars: { prompt: "What is the OSI model and what are its seven layers?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "Steps to connect to a shared corporate drive in Windows." }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
 
-
-  # ==========================================
-  # DOMAIN 2: SOFTWARE ENGINEERING (10 Pairs)
-  # ==========================================
-  - vars: { prompt: "Write a python function to add two integer numbers." }
+  - vars: { prompt: "What is the difference between a list and a tuple in Python?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "Show me how to add two integers together using Python." }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "Explain the difference between a list and a tuple in Python." }
+  - vars: { prompt: "How do Python decorators work and what are they used for?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "Compare Python lists and tuples and outline the differences." }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "What is the purpose of interface segregation in SOLID?" }
+  - vars: { prompt: "What is the Global Interpreter Lock in Python and how does it affect threading?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "Why do we use the interface segregation principle in SOLID?" }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "How to parse a JSON string into a dictionary in Javascript." }
+  - vars: { prompt: "How does garbage collection work in Python?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "Converting JSON string data to an object using Javascript." }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "What are the benefits of using a microservices architecture?" }
+  - vars: { prompt: "What are Python generators and how do they differ from regular functions?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "Why should a company adopt microservices instead of monoliths?" }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "How to write a unit test for a React component using Jest." }
+  - vars: { prompt: "What is the purpose of virtual environments in Python development?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "Steps for testing a ReactJS UI component with the Jest framework." }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "Explain how garbage collection works in Java." }
+  - vars: { prompt: "How does exception handling work in Python with try except blocks?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "How does the JVM handle memory management and garbage collection?" }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "What is the difference between a GET and POST HTTP request?" }
+  - vars: { prompt: "What is the difference between deepcopy and shallow copy in Python?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "Compare REST API GET methods versus POST methods." }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "How to implement a singleton design pattern in C#." }
+  - vars: { prompt: "How do context managers and the with statement work in Python?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "Provide an example of the singleton architecture pattern in C#." }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "What is a deadlock in multithreaded programming?" }
+  - vars: { prompt: "What are Python dataclasses and when should they be used instead of regular classes?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "Explain the concept of deadlocks when managing multiple threads." }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
 
-
-  # ==========================================
-  # DOMAIN 3: DEVOPS & CLOUD (10 Pairs)
-  # ==========================================
-  - vars: { prompt: "What is the command to restart a running docker container?" }
+  - vars: { prompt: "What is the difference between a Docker image and a Docker container?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "How do I reboot a docker instance that is currently running?" }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "Explain the difference between AWS S3 and AWS EBS storage." }
+  - vars: { prompt: "What is Kubernetes and what problems does it solve for container orchestration?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "Compare Amazon S3 object storage with EBS block storage." }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "How do I create a new deployment using Kubernetes kubectl?" }
+  - vars: { prompt: "What is Infrastructure as Code and what are its main benefits?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "What is the kubectl command for spinning up a deployment?" }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "What is a continuous integration and continuous deployment pipeline?" }
+  - vars: { prompt: "How does a CI/CD pipeline automate the software delivery process?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "Explain the concept behind a CI/CD pipeline in software ops." }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "How to safely store database credentials using AWS Secrets Manager?" }
+  - vars: { prompt: "What is the difference between AWS S3 and EBS storage services?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "Best practices for saving DB passwords in Amazon Secrets Manager." }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "What is the purpose of a Terraform state file?" }
+  - vars: { prompt: "What is a Terraform state file and why is it important?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "Explain why Terraform requires a state file to manage infrastructure." }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "How to configure auto-scaling for an EC2 instance group." }
+  - vars: { prompt: "How does auto-scaling work in cloud computing environments?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "Steps to setup an AWS Auto Scaling group for EC2 servers." }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "What is the difference between a Docker image and a container?" }
+  - vars: { prompt: "What are the key differences between serverless and traditional server-based architectures?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "Compare built Docker images to actively running containers." }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "How to check the logs of a crashed Kubernetes pod." }
+  - vars: { prompt: "What is a service mesh and how does it manage microservice communication?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "What kubectl command views logs for a pod that has failed?" }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "Explain the benefits of Infrastructure as Code (IaC)." }
+  - vars: { prompt: "How do blue-green deployments reduce downtime during releases?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "Why is deploying infrastructure using code advantageous?" }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
 
-
-  # ==========================================
-  # DOMAIN 4: DATA SCIENCE & AI (10 Pairs)
-  # ==========================================
-  - vars: { prompt: "What is cosine similarity in the context of vector embeddings?" }
+  - vars: { prompt: "What is overfitting in machine learning and how can it be prevented?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "How does cosine distance measure similarity between vectors?" }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "Explain how a retrieval augmented generation system works." }
-    assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "What is the architecture behind a standard RAG application?" }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
   - vars: { prompt: "What is the difference between supervised and unsupervised learning?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "Compare supervised machine learning with unsupervised learning." }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "How do you handle missing values in a pandas dataframe?" }
+  - vars: { prompt: "How does gradient descent optimize a loss function during model training?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "Techniques for dealing with NaN or empty data in pandas." }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "What is an epoch in deep learning neural network training?" }
+  - vars: { prompt: "What is a confusion matrix and how is it used to evaluate classifiers?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "Define what the term epoch means when training neural nets." }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "Explain the concept of overfitting in machine learning models." }
+  - vars: { prompt: "What is the attention mechanism in transformer models?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "Why do models overfit and how does it impact training data?" }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "What is the purpose of the attention mechanism in transformers?" }
+  - vars: { prompt: "What is the bias-variance tradeoff in machine learning?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "How does self-attention work in large language models?" }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "How to perform a train-test split using scikit-learn." }
+  - vars: { prompt: "How does cosine similarity measure the relationship between two vectors?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "Steps to divide a dataset into training and testing sets in sklearn." }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "What is a confusion matrix in classification algorithms?" }
+  - vars: { prompt: "What is retrieval augmented generation and how does it improve LLM accuracy?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "Explain how to interpret a machine learning confusion matrix." }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "How does gradient descent optimize a loss function?" }
+  - vars: { prompt: "What is transfer learning and why is it effective for NLP tasks?" }
     assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "What is the role of gradient descent in minimizing error?" }
-    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "What are word embeddings and how do models like Word2Vec generate them?" }
+    assert: [{ type: starts-with, value: "[MODEL]" }]
 
+  - vars: { prompt: "What is SQL injection and how can applications defend against it?" }
+    assert: [{ type: starts-with, value: "[MODEL]" }]
+  - vars: { prompt: "How does two-factor authentication improve account security?" }
+    assert: [{ type: starts-with, value: "[MODEL]" }]
+  - vars: { prompt: "What is the difference between symmetric and asymmetric encryption?" }
+    assert: [{ type: starts-with, value: "[MODEL]" }]
+  - vars: { prompt: "What is cross-site scripting and how do web applications prevent it?" }
+    assert: [{ type: starts-with, value: "[MODEL]" }]
+  - vars: { prompt: "How does a hash function work and why is it used for password storage?" }
+    assert: [{ type: starts-with, value: "[MODEL]" }]
+  - vars: { prompt: "What is a man-in-the-middle attack and how does TLS prevent it?" }
+    assert: [{ type: starts-with, value: "[MODEL]" }]
+  - vars: { prompt: "What is role-based access control and how does it enforce authorization?" }
+    assert: [{ type: starts-with, value: "[MODEL]" }]
+  - vars: { prompt: "What is a zero-day vulnerability and why is it difficult to defend against?" }
+    assert: [{ type: starts-with, value: "[MODEL]" }]
+  - vars: { prompt: "How does OAuth 2.0 work for delegated authorization between applications?" }
+    assert: [{ type: starts-with, value: "[MODEL]" }]
+  - vars: { prompt: "What is certificate pinning and how does it protect mobile applications?" }
+    assert: [{ type: starts-with, value: "[MODEL]" }]
 
   # ==========================================
-  # DOMAIN 5: HR, LEGAL & CORPORATE POLICIES (10 Pairs)
+  # PHASE 2: VERIFY CACHE HITS (All 50 [CACHED] runs)
   # ==========================================
-  - vars: { prompt: "What is the standard corporate policy for paid time off (PTO)?" }
-    assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "How many days of paid vacation do standard employees get?" }
+  - vars: { prompt: "What is the purpose of a reverse proxy and in what scenarios should it be deployed?" }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Describe the step-by-step process of DNS lookup when a browser navigates to a website." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Compare the TCP and UDP transport layer protocols and their trade-offs." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Explain the mechanisms a load balancer uses to spread incoming requests to backend servers." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Describe how a virtual private network encrypts and protects data in transit." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Explain how firewalls protect a network by filtering incoming and outgoing traffic." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "What makes HTTPS more secure than plain HTTP and how does TLS encryption work in it?" }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Explain network address translation and its purpose in residential networking equipment." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Describe how content delivery networks reduce latency and speed up page loads worldwide." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "List and explain each of the seven layers in the Open Systems Interconnection model." }
     assert: [{ type: starts-with, value: "[CACHED]" }]
 
-  - vars: { prompt: "What is the process for submitting corporate travel expenses?" }
-    assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "How do I file for reimbursement after a company business trip?" }
+  - vars: { prompt: "Compare Python lists and tuples in terms of mutability and use cases." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Explain the concept of decorators in Python and provide a practical use case." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Explain the GIL in CPython and why it limits true parallel execution of threads." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Describe the memory management and garbage collection mechanisms used by Python." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Explain how generator functions using yield differ from normal return-based functions in Python." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Why should Python developers use virtual environments to isolate project dependencies?" }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Explain the try-except-finally pattern for error handling in Python programs." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Explain how shallow copy and deep copy behave differently with nested objects in Python." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Explain the purpose of Python context managers and how the with keyword manages resources." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Explain the dataclass decorator in Python and how it reduces boilerplate compared to normal classes." }
     assert: [{ type: starts-with, value: "[CACHED]" }]
 
-  - vars: { prompt: "Can you explain the company policy on remote work and telecommuting?" }
-    assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "What are the rules regarding working from home or remote locations?" }
+  - vars: { prompt: "Compare Docker images and containers and explain how one relates to the other." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Explain how Kubernetes manages containerized applications at scale and why teams adopt it." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Explain the IaC approach to infrastructure management and why it improves reliability." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Describe how continuous integration and continuous deployment pipelines accelerate software releases." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Compare Amazon S3 object storage with EBS block storage in terms of use cases and architecture." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Explain the purpose of the state file in Terraform and what happens if it gets corrupted." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Describe the mechanism by which cloud platforms automatically scale compute resources based on demand." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Compare serverless computing with conventional server deployments in terms of cost and scalability." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Explain how service meshes like Istio handle traffic routing and observability between microservices." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Explain the blue-green deployment strategy and how it enables zero-downtime software updates." }
     assert: [{ type: starts-with, value: "[CACHED]" }]
 
-  - vars: { prompt: "How to initiate a hardware upgrade request for a developer laptop." }
-    assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "Steps to request a new Macbook Pro through the IT portal." }
+  - vars: { prompt: "Explain the problem of overfitting in ML models and list techniques to mitigate it." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Compare supervised machine learning with unsupervised learning in terms of data requirements and goals." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Explain the gradient descent algorithm and its role in minimizing the error of a neural network." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Explain how to read a confusion matrix and derive precision, recall, and F1 from it." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Describe how self-attention works inside transformer architectures like BERT and GPT." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Explain how bias and variance affect model performance and how to find the right balance." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Explain the mathematical formula behind cosine similarity and why it is used in NLP." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Describe the RAG pattern and how combining retrieval with generation reduces hallucinations." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Explain how pre-trained language models can be fine-tuned for downstream NLP applications." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Explain the concept of word vector representations and how Word2Vec learns them from text." }
     assert: [{ type: starts-with, value: "[CACHED]" }]
 
-  - vars: { prompt: "What are the core corporate values of this organization?" }
-    assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "Can you list the foundational mission and values of the company?" }
+  - vars: { prompt: "Explain the SQL injection attack vector and list best practices for preventing it." }
     assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "What is the procedure for reporting a workplace safety hazard?" }
-    assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "How do I file an OSHA compliance or safety risk report internally?" }
+  - vars: { prompt: "Explain why adding a second authentication factor significantly reduces the risk of unauthorized access." }
     assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "Explain the corporate maternity and paternity leave benefits." }
-    assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "What is the company policy regarding parental leave for new parents?" }
+  - vars: { prompt: "Compare symmetric key encryption with public-key cryptography in terms of speed and key management." }
     assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "How do I enroll in the company 401k retirement matching plan?" }
-    assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "Steps to sign up for employer-matched retirement contributions." }
+  - vars: { prompt: "Explain XSS attacks and the sanitization techniques web apps use to block malicious script injection." }
     assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "What is the policy for mandatory annual compliance training?" }
-    assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "When are the deadlines for finishing HR compliance modules?" }
+  - vars: { prompt: "Explain cryptographic hashing and why passwords should be hashed rather than stored in plaintext." }
     assert: [{ type: starts-with, value: "[CACHED]" }]
-
-  - vars: { prompt: "How to request a formal performance review with my manager." }
-    assert: [{ type: starts-with, value: "[MODEL]" }]
-  - vars: { prompt: "Steps for scheduling an annual evaluation with my supervisor." }
+  - vars: { prompt: "Describe how MITM attacks intercept communication and how TLS certificates provide protection." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Explain the RBAC model and how assigning permissions to roles simplifies access management." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Explain zero-day exploits and why they pose a unique challenge for security teams." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Describe the OAuth 2.0 authorization flow and how it allows third-party access without sharing passwords." }
+    assert: [{ type: starts-with, value: "[CACHED]" }]
+  - vars: { prompt: "Explain how SSL certificate pinning prevents MITM attacks against mobile app API connections." }
     assert: [{ type: starts-with, value: "[CACHED]" }]
